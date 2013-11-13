@@ -1,0 +1,45 @@
+<div id="add-event" class="editor-bar">
+  <span class="editor-bar-text">Add Event</span>
+  <div class="editor-btn pull-right">
+    <button type="button" class="btn btn-sm btn-default">
+      <i class="icon-reply icon-large"></i>
+    </button>
+    <button type="button" class="btn btn-sm btn-primary">Save</button>
+    <button type="button" class="btn btn-sm btn-default">Discard</button>
+  </div>
+</div>
+<div class="editor-inner">
+  <div class="event-info">
+    <div class="event-title">
+      <input id="event-title-input" name="event-title-input" title="Event title" type="text" class="form-control" placeholder="textinput ui-placeholder">
+    </div>
+    <div class="event-time-select">
+      <form class="form-horizontal">
+        <fieldset>
+          <div class="control-group">
+            <label class="control-label">Range of the event:</label>
+            <div class="controls">
+              <div class="input-group">
+                <span class="input-group-addon"><i class="icon-calendar"></i></span>
+                <input type="text" class="form-control" name="date-time-range" id="date-time-range" readonly style="border-bottom-right-radius: 4px;border-top-right-radius: 4px"/>
+                <input type="text" class="form-control" name="date-range" id="date-range" readonly style="display: none"/>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <div class="event-properties">
+      <div class="check-btn">
+        <input type="checkbox" id="check-allday">
+        <label>All day</label>
+      </div>
+      <div class="check-btn">
+        <input type="checkbox" id="check-repeat">
+        <label>Repeat</label>
+      </div>
+    </div>
+  </div>
+  <div class="event-details">
+  </div>
+</div>
