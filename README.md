@@ -67,4 +67,4 @@ app
 ## Copyright and license
 Copyright 2013 Xiao Shi
 
-[MIT License](LICENSE-MIT)
+[MIT License](LICENSE)
