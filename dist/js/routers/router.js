@@ -1,0 +1,1 @@
+define(["jquery","underscore","backbone","views/Calendar","views/EventEditor","collections/Events"],function(e,t,n,r,i,s){return n.Router.extend({routes:{"*actions":"index",editor:"editor",catalog:""},initialize:function(){},index:function(){new r({collection:new s})},editor:function(){new i}})});

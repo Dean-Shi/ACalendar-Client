@@ -1,5 +1,26 @@
 @charset "UTF-8";
 
+/* Container
+------------------------------------------------------------------------*/
+.container {
+	max-width: 100%;
+	padding: 0 20px;
+}
+body>.container {
+	padding: 0 10px;
+}
+.container aside {
+	display: table-cell; 
+	padding: 0 5px;
+	vertical-align: top;
+}
+.container section {
+	display: table-cell; 
+	width: 100%
+}
+#mini-calendar {
+	border: 1px solid #ddd;
+}
 /* Navbar
 ------------------------------------------------------------------------*/
 .navbar {
@@ -22,10 +43,6 @@
 }
 ::-webkit-scrollbar:hover {
 	background-color: #eee;
-}
-::-webkit-resizer {
-	-webkit-border-radius: 4px;
-	background-color: #666;
 }
 ::-webkit-scrollbar-thumb {
 	min-height: .8em;
@@ -147,6 +164,7 @@
 }
 #editor-panel .event-properties {
 	margin-top: 8px;
+	height: 25px;
 }
 #editor-panel .event-properties .check-btn {
 	width: 100px;
@@ -155,6 +173,12 @@
 }
 #editor-panel .event-time-select input {
 	cursor: pointer;
+}
+#editor-panel .event-details {
+	margin-top: 10px;
+}
+#editor-panel .event-details #event-description-input {
+	resize: vertical;
 }
 
 /* Daterangepicker & Datepicker
@@ -179,14 +203,17 @@
 	padding: 4px 5px !important;
 }
 
-/* Repeat Dialog
+/* Dialog
 ------------------------------------------------------------------------*/
 .modal {
 	overflow-y: auto;
 	background-color: rgba(0, 0, 0, 0.5);
 }
+.modal .modal-footer {
+	margin-top: 0;
+}
 .modal .modal-body {
-	padding: 20px 110px;
+	padding: 20px 70px;
 }
 .modal .event-properties #repeat-info-edit {
 	margin-left: 5px;
@@ -237,6 +264,20 @@
 }
 body.modal-open {
 	margin-right: 0;
+}
+
+.modal .info-content {
+	font-size: 16px;
+}
+.modal .info-content th {
+	color: #222;
+	font-weight: bold;
+	padding: 7px 10px 7px 0;
+	text-align: right;
+	white-space: nowrap;
+}
+.modal .info-content td {
+	padding: 7px 0;
 }
 
 /* Fullcalendar

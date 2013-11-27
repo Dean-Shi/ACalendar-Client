@@ -1,0 +1,18 @@
+{
+  "name": "ACalendar",
+  "version": "1.0.0",
+  "dependencies": {
+    "requirejs": "2.1.9",
+    "jquery": "1.10.2",
+    "jquery-icheck": "latest",
+    "backbone": "1.1.0",
+    "underscore": "1.5.2",
+    "bootstrap": "3.0.2",
+    "fullcalendar": "1.6.4",
+    "qtip2": "2.1.1",
+    "bongo.js": "latest",
+    "bootstrap-datepicker": "1.2.0",
+    "bootstrap-daterangepicker": "latest",
+    "momentjs": "2.4.0"
+  }
+}

@@ -67,29 +67,26 @@
       </div>
     </div>
     <div class="container">
-      <!-- calendar -->
-      <div id="calendar"></div> <!-- /calendar -->
-
+      <!-- main-panel -->
+      <div id="main-panel">
+        <aside>
+          <div id="mini-calendar"></div>
+        </aside>
+        <section>
+          <!-- calendar -->
+          <div id="calendar"></div> <!-- /calendar -->
+        </section>
+      </div><!-- /main-panel -->
+      
       <!-- editor-panel -->
       <div id="editor-panel" style="display: none"></div><!-- /editor-panel -->
     </div>
 
     <!-- Modal -->
-    <div class="modal fade" id="repeat-dialog" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-show="false">
+    <div class="modal fade" id="dialog" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="false" data-show="false">
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title">Repeat</h4>
-          </div>
-          <div class="modal-body">
-            <table class="repeat-details">
-            </table>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" id="repeat-close" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" id="repeat-done">Done</button>
-          </div>
+          
         </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
@@ -121,7 +118,7 @@
                   <div class="control-group">
                     <label class="control-label">Range of the event:</label>
                     <div class="controls">
-                      <div class="input-group">
+                      <div class="input-group" style="width: 100%">
                         <span class="input-group-addon"><i class="icon-calendar"></i></span>
                         <input type="text" class="form-control" name="date-time-range" id="date-time-range" readonly style="border-bottom-right-radius: 4px;border-top-right-radius: 4px; display: <%= event.allDay ? 'none' : 'block' %>" value="<%= dateTimeRange %>" />
                         <input type="text" class="form-control" name="date-range" id="date-range" readonly style="display: <%= !event.allDay ? 'none' : 'block' %>" value="<%= dateRange %>"/>
@@ -131,7 +128,7 @@
                 </fieldset>
               </form>
             </div>
-            <div class="event-properties">
+            <div class="event-properties clearfix">
               <div class="check-btn">
                 <input type="checkbox" id="check-allday" <%= event.allDay ? "checked" : "" %>>
                 <label>All day</label>
@@ -146,7 +143,18 @@
               </div>
             </div>
           </div>
+          <hr>
           <div class="event-details">
+            <form role="form">
+              <div class="form-group">
+                <label for="event-location-input">Location:</label>
+                <input type="text" class="form-control" id="event-location-input" placeholder="Location" value="<%= event.location %>">
+              </div>
+              <div class="form-group">
+                <label for="event-description-input">Description:</label>
+                <textarea id="event-description-input" class="form-control" rows="5" style="resizable: false" value="<%= event.description %>"><%= event.description %></textarea>
+              </div>
+            </form>
           </div>
         </div>
     </script>
@@ -154,118 +162,167 @@
 
 
     <script type="text/template" id="repeatDialogTemplate">
-      <tbody id="repeat-details-header">
-        <tr>
-          <th>Repeats:</th>
-          <td>
-            <select id="repeat-frequency" title="Repeats">
-              <% var FREQUENCY = ["Yearly", "Monthly", "Weekly", "Daily"];
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Repeat</h4>
+      </div>
+      <div class="modal-body">
+        <table class="repeat-details">
+          <tbody id="repeat-details-header">
+            <tr>
+              <th>Repeats:</th>
+              <td>
+                <select id="repeat-frequency" title="Repeats">
+                  <% var FREQUENCY = ["Yearly", "Monthly", "Weekly", "Daily"];
 
-                 for (var i = 3; i >= 0; i--) { %>
-              <option value="<%= i %>" title="<%= FREQUENCY[i] %>" <%= i == rrule.freq ? "selected" : "" %>><%= FREQUENCY[i] %></option> 
-              <% } %>
-            </select>
-          </td>
-        </tr>
-      </tbody>
-      <tbody id="repeat-details-body">
-        <tr>
-          <th>Repeat every:</th>
-          <td>
-            <select id="repeat-interval" title="Repeat every">
-              <option value="1" <%= (typeof rrule.interval == "undefined" || rrule.interval == null) ? "selected" : "" %>>1</option>
-              <% for (var i = 2; i <= 30; i++) { %>
-              <option value="<%= i %>" <%= rrule.interval == i ? "selected" : "" %>><%= i %></option>
-              <% } %>
-            </select>
-            <% var intervalLabel = ["years", "months", "weeks", "days"]; %>
-            <label id="repeat-interval-label"><%= intervalLabel[rrule.freq] %></label>
-          </td>
-        </tr>
-        <% if ("Monthly" == FREQUENCY[rrule.freq]) { %>
-        <tr id="repeat-by">
-          <th class="repeat-by">Repeat by:</th>
-          <td>
-            <span>
-              <input id="repeat-dom" name="repeatby" type="radio" title="Repeat by day of the month" checked>
-              <label for="repeat-domt" title="Repeat by day of the month">day of the month</label>
-            </span>
-            <span>
-              <input id="repeat-dow" name="repeatby" type="radio" title="Repeat by day of the week">
-              <label for="repeat-dow" title="Repeat by day of the week">day of the week</label>
-            </span>
-          </td>
-        </tr>
-        <% } %>
+                     for (var i = 3; i >= 0; i--) { %>
+                  <option value="<%= i %>" title="<%= FREQUENCY[i] %>" <%= i == rrule.freq ? "selected" : "" %>><%= FREQUENCY[i] %></option> 
+                  <% } %>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+          <tbody id="repeat-details-body">
+            <tr>
+              <th>Repeat every:</th>
+              <td>
+                <select id="repeat-interval" title="Repeat every">
+                  <option value="1" <%= (typeof rrule.interval == "undefined" || rrule.interval == null) ? "selected" : "" %>>1</option>
+                  <% for (var i = 2; i <= 30; i++) { %>
+                  <option value="<%= i %>" <%= rrule.interval == i ? "selected" : "" %>><%= i %></option>
+                  <% } %>
+                </select>
+                <% var intervalLabel = ["years", "months", "weeks", "days"]; %>
+                <label id="repeat-interval-label"><%= intervalLabel[rrule.freq] %></label>
+              </td>
+            </tr>
+            <% if ("Monthly" == FREQUENCY[rrule.freq]) { %>
+            <tr id="repeat-by">
+              <th class="repeat-by">Repeat by:</th>
+              <td>
+                <span>
+                  <input id="repeat-dom" name="repeatby" type="radio" title="Repeat by day of the month" checked>
+                  <label for="repeat-domt" title="Repeat by day of the month">day of the month</label>
+                </span>
+                <span>
+                  <input id="repeat-dow" name="repeatby" type="radio" title="Repeat by day of the week">
+                  <label for="repeat-dow" title="Repeat by day of the week">day of the week</label>
+                </span>
+              </td>
+            </tr>
+            <% } %>
 
-        <% if ("Weekly" == FREQUENCY[rrule.freq]) {
-            var WEEKDAY = [
-                {title: "Sunday", name: "SU"},
-                {title: "Monday", name: "MO"},
-                {title: "Tuesday", name: "TU"},
-                {title: "Wednesday", name: "WE"},
-                {title: "Thursday", name: "TH"},
-                {title: "Friday", name: "FR"},
-                {title: "Saturday", name: "SA"}
-            ];
-        %>
-        <tr id="repeat-on">
-          <th class="repeat-on">Repeat on:</th>
-          <td>
-            <div>
-              <%
-                Array.prototype.contains = function (obj) {
-                  var i = this.length;
-                  while (i--) {
-                      if (this[i] === obj) {
-                          return true;
+            <% if ("Weekly" == FREQUENCY[rrule.freq]) {
+                var WEEKDAY = [
+                    {title: "Sunday", name: "SU"},
+                    {title: "Monday", name: "MO"},
+                    {title: "Tuesday", name: "TU"},
+                    {title: "Wednesday", name: "WE"},
+                    {title: "Thursday", name: "TH"},
+                    {title: "Friday", name: "FR"},
+                    {title: "Saturday", name: "SA"}
+                ];
+            %>
+            <tr id="repeat-on">
+              <th class="repeat-on">Repeat on:</th>
+              <td>
+                <div class="btn-group">
+                  <%
+                    Array.prototype.contains = function (obj) {
+                      var i = this.length;
+                      while (i--) {
+                          if (this[i] === obj) {
+                              return true;
+                          }
                       }
-                  }
-                  return false;
-                }
-              %>
-              <% for (var i = 0; i < 7; i++) { %>
-              <span>
-                <input id="repeat-on_<%= i %>" name="<%= WEEKDAY[i].name %>" type="checkbox" title="<%= WEEKDAY[i].title %>" <%= (rrule.byweekday.length != 0 ? rrule.byweekday.contains(i) : rrule.dtstart.getDay() == i) ? "checked" : "" %>>
-                <label for="repeat-on_<%= i %>" title="<%= WEEKDAY[i].title %>"><%= WEEKDAY[i].name.charAt(0) %></label>
-              </span>
-              <% } %>
-            </div>
-          </td>
-        </tr>
-        <% } %>
-        <tr>
-          <th class="repeat-starts">Starts on:</th>
-          <td>
-            <input id="repeat-starts-input" size="10" autocomplete="off" value="<%= rrule.dtstart && rrule.dtstart.toLocaleDateString() %>" disabled>
-          </td>
-        </tr>
-        <tr>
-          <th class="repeat-ends">Ends:</th>
-          <td>
-            <ul>
-              <li class="repeat-ends-option">
-                <input id="repeat-ends-never" name="repeat-ends" type="radio" title="Ends never" <%= (rrule.count || rrule.until) ? "" : "checked" %>>
-                <label for="repeat-ends-never" title="Ends never">Never</label>
-              </li>
-              <li class="repeat-ends-option">
-                <input id="repeat-ends-count" name="repeat-ends" type="radio" title="Ends after a number of occurrences" <%= rrule.count && "checked" %>>
-                <label for="repeat-ends-count" title="Ends after a number of occurrences">After</label>
-                <input id="repeat-ends-count_input" class="form-control" type="number" size="3" value="<%= rrule.count ? rrule.count : 5 %>" title="Occurrences" <%= rrule.count ? "" : "disabled" %>> occurrences
-              </li>
-              <li class="repeat-ends-option">
-                <input id="repeat-ends-until" name="repeat-ends" type="radio" title="Ends on a specified date" <%= rrule.until && "checked" %>>
-                <label for="repeat-ends-until" title="Ends on a specified date">On</label>
-                <input id="repeat-ends-until_input" class="form-control" type="text" size="10" value="<%= rrule.until ? rrule.until : rrule.dtstart.toLocaleDateString() %>" title="Specified date" autocomplete="off" <%= rrule.until ? "" : "disabled" %>>
-              </li>
-            </ul>
-          </td>
-        </tr>
-        <tr>
-          <th>Summary:</th>
-          <td id="repeat-summary"></td>
-        </tr>
-      </tbody>
+                      return false;
+                    }
+                  %>
+                  <% for (var i = 0; i < 7; i++) { %>
+                  <button id="repeat-on_<%= i %>" data-index="<%= i %>" name="<%= WEEKDAY[i].name %>" type="button" title="<%= WEEKDAY[i].title %>" class="btn btn-primary <%= (rrule.byweekday.length != 0 ? rrule.byweekday.contains(i) : rrule.dtstart.getDay() == i) ? 'active' : '' %>"><%= WEEKDAY[i].name %></button>
+                  <!--<span>
+                    <input id="repeat-on_<%= i %>" name="<%= WEEKDAY[i].name %>" type="checkbox" title="<%= WEEKDAY[i].title %>" <%= (rrule.byweekday.length != 0 ? rrule.byweekday.contains(i) : rrule.dtstart.getDay() == i) ? "checked" : "" %>>
+                    <label for="repeat-on_<%= i %>" title="<%= WEEKDAY[i].title %>"><%= WEEKDAY[i].name.charAt(0) %></label>
+                  </span>-->
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+            <% } %>
+            <tr>
+              <th class="repeat-starts">Starts on:</th>
+              <td>
+                <input id="repeat-starts-input" class="form-control" size="10" autocomplete="off" value="<%= rrule.dtstart && rrule.dtstart.toLocaleDateString() %>" <%= isNewRepeat && "disabled" %>>
+              </td>
+            </tr>
+            <tr>
+              <th class="repeat-ends">Ends:</th>
+              <td>
+                <ul>
+                  <li class="repeat-ends-option">
+                    <input id="repeat-ends-never" name="repeat-ends" type="radio" title="Ends never" <%= (rrule.count || rrule.until) ? "" : "checked" %>>
+                    <label for="repeat-ends-never" title="Ends never">Never</label>
+                  </li>
+                  <li class="repeat-ends-option">
+                    <input id="repeat-ends-count" name="repeat-ends" type="radio" title="Ends after a number of occurrences" <%= rrule.count && "checked" %>>
+                    <label for="repeat-ends-count" title="Ends after a number of occurrences">After</label>
+                    <input id="repeat-ends-count_input" class="form-control" type="number" size="3" value="<%= rrule.count ? rrule.count : 5 %>" title="Occurrences" <%= rrule.count ? "" : "disabled" %>> occurrences
+                  </li>
+                  <li class="repeat-ends-option">
+                    <input id="repeat-ends-until" name="repeat-ends" type="radio" title="Ends on a specified date" <%= rrule.until && "checked" %>>
+                    <label for="repeat-ends-until" title="Ends on a specified date">On</label>
+                    <input id="repeat-ends-until_input" class="form-control" type="text" size="10" value="<%= rrule.until ? rrule.until.toLocaleDateString() : rrule.dtstart.toLocaleDateString() %>" title="Specified date" autocomplete="off" <%= rrule.until ? "" : "disabled" %>>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <th>Summary:</th>
+              <td id="repeat-summary"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="repeat-close" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="repeat-done">Done</button>
+      </div>
+    </script>
+
+    <script type="text/template" id="infoDialogTemplate">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title"><%= event.title %></h4>
+      </div>
+      <div class="modal-body">
+        <table class="info-content">
+          <tbody>
+            <tr>
+              <th>Title:</th>
+              <td><%= event.title %></td>
+            </tr>
+            <tr>
+              <th>Date: </th>
+              <td><%= event.date %></td>
+            </tr>
+            <% if (typeof event.location != "undefined" && event.location !== null) { %>
+            <tr>
+              <th>Location:</th>
+              <td><%= event.location %></td>
+            </tr>
+            <% } %>
+            <% if (typeof event.description != "undefined" && event.description !== null) { %>
+            <tr>
+              <th>Description:</th>
+              <td><%= event.description %></td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </script>
   </body>
 </html>

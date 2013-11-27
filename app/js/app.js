@@ -8,15 +8,16 @@ define([
             Backbone.history.start();
         },
         setupPrint: function () {
-        	var calendar = $("#calendar");
-	        var w = calendar.css("width");
+            var calendar = $("#calendar");
+            var w = calendar.css("width");
 
             var beforePrint = function() {
-                // prepare calendar for printing
-                calendar.css("width", "999");
+                // Prepare calendar for printing
+                calendar.css("width", "980");
                 calendar.fullCalendar("render");
             };
             var afterPrint = function() {
+                // Reverse the width of calendar
                 calendar.css("width", w);
                 calendar.fullCalendar("render");
             };

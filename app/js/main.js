@@ -4,10 +4,7 @@ requirejs.config({
             'http://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min',
             'vendor/jquery/jquery.min'
         ],
-        jqueryui: [
-            'http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min',
-            'libs/jquery/jquery-ui.custom.min'
-        ],
+        jqueryui: 'libs/jquery-ui.custom.min',
         underscore: [
             'http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min',
             'vendor/underscore/underscore-min'
@@ -51,6 +48,7 @@ requirejs.config({
             deps: [ 'underscore', 'jquery' ],
             exports: 'Backbone'
         },
+        jqueryui: [ 'jquery' ],
         'fullCalendar': [ 'jquery' ],
         'bootstrap': [ 'jquery' ],
         'daterangepicker': [ 'jquery', 'moment' ],

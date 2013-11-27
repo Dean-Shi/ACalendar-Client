@@ -4,59 +4,61 @@ define([
     'backbone',
     'moment',
     'rrule',
+
+    /* Plugins */
     'bootstrap',
     'daterangepicker',
     'datepicker',
     'icheck'
 ], function ($, _, Backbone, moment, RRule) {
 
-    var summaryToText = function (rrule) {
+    var summaryToString = function (rrule) {
         var summaryText = "";
         var intervalLabel = ["years", "months", "weeks", "days"];
-        var frequency = ["Yearly", "Monthly", "Weekly", "Daily"];
-        var WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", ];
+        var frequency = ["Annually", "Monthly", "Weekly", "Daily"];
+        var WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         var MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+        // In the summary, the interval will be displayed first
         if (rrule.interval === 1) {
-            if (rrule.freq == RRule.YEARLY) {
-                summaryText += "Annually";
-            } else {
-                summaryText += frequency[rrule.freq];
-            }
+            summaryText += frequency[rrule.freq];
         } else {
             summaryText += "Every " + rrule.interval + " " + intervalLabel[rrule.freq];
         }
 
+        // Print the format for each frequence
         if (RRule.WEEKLY === rrule.freq) {
             summaryText += " on ";
             if (rrule.byweekday.length === WEEKDAY.length) {
-                summaryText += "all days "
+                summaryText += "all days";
+            } else if (rrule.byweekday.length === 0) {
+                summaryText += "[Missing days]";
             } else {
-                for (var i = 0; i < rrule.byweekday.length; i++) {
-                    var byweekday = rrule.byweekday[i];
-                    summaryText += WEEKDAY[byweekday];
-                    if (i != rrule.byweekday.length - 1) {
-                        summaryText += ", ";
-                    }
+                var l = rrule.byweekday.length - 1;
+                for (var i = 0; i < l; i++) {
+                    var index = rrule.byweekday[i];
+                    summaryText += WEEKDAY[index] + ", ";
                 }
+                var index = rrule.byweekday[l];
+                summaryText += WEEKDAY[index];
             }
         } else if (RRule.MONTHLY === rrule.freq) {
             summaryText += " on day ";
             var onDay = rrule.dtstart;
             summaryText += onDay.getDate();
-        } else if (RRule.YEARLY == rrule.freq) {
+        } else if (RRule.YEARLY === rrule.freq) {
             summaryText += " on ";
             var onDay = rrule.dtstart;
             summaryText += MONTH[onDay.getMonth()] + " " + onDay.getDate();
         }
 
-        if (rrule.count) {
-            if (rrule.count == 1) {
+        if (rrule.count) { // rrule has count
+            if (rrule.count === 1) {
                 summaryText = "Once";
             } else {
                 summaryText += ", " + rrule.count + " times";
             }
-        } else if (rrule.until) {
+        } else if (rrule.until) { // rrule has until
             summaryText += ", until " + new Date(rrule.until).toDateString();
         }
         return summaryText;
@@ -64,87 +66,64 @@ define([
 
 
     var RepeatDialog = Backbone.View.extend({
-        el: "#repeat-dialog",
+        el: "#dialog",
         initialize: function (attrs) {
-            var _this       = this,
-                repeatDone  = this.$("#repeat-done"),
-                repeatClose = this.$("#repeat-close"),
-                repeatBy    = this.$("#repeat-by"),
-                repeatOn    = this.$("#repeat-on");
-                
+            var _this       = this;
 
             this.editorPanel = attrs.editorPanel;
             this.rrule       = attrs.rrule;
-            this.start       = attrs.start;
+            this.dtstart     = attrs.dtstart;
 
-            var isSetRepeat = !_.isNull(this.rrule);
+            this.isNewRepeat = _.isNull(this.rrule);
 
-            // Using Underscore feature that only set the variable isSetRepeat
-            // to ture once
-            var toSetRepeat = _.once(function () {
-                isSetRepeat = true;
-            });
-
-            this.$el.modal({
-                backdrop: false
-            });
-
-            if (!isSetRepeat) {
+            if (this.isNewRepeat) {
                 // Initialize rrule
                 this.rrule = {
                     freq: RRule.WEEKLY,
                     interval: 1,
                     byweekday: [],
-                    dtstart: this.start
+                    dtstart: this.dtstart
                 };
 
                 // Add the day of the start day to by week day
                 this.rrule.byweekday.push(this.rrule.dtstart.getDay());
             }
 
-            // Render the panel based on the rrule
-            this.renderPanel();
-
-            // Done button listenor
-            repeatDone.on("click", function () {
-                // This method will only be called once
-                toSetRepeat();
-
-                // Trigger the dialog to hide
-                _this.$el.modal("hide");
-
-                // Trigger rrule update
-                _this.editorPanel.trigger("rruleUpdate", _this.rrule);
-            });
-
-            // Close button listenor
-            repeatClose.on("click", function () {
-                // Uncheck if the repeat is not set
-                if (!isSetRepeat) {
-                    _this.editorPanel.trigger("cancelRepeat");
-                }
+            this.$el.modal({
+                backdrop: false
             });
         },
 
-        render: function () {
+        render: function (options, callback) {
+            if (!_.isUndefined(options)) {
+                this.rrule = options.rrule || this.rrule;
+                this.rrule.dtstart = options.dtstart || this.rrule.dtstart;
+            }
+            this.renderPanel();
             this.registerRepeatFreq();
             this.registerRepeatInterval();
             this.registerRepeatOn();
             this.registerRepeatEnd();
+            this.registerButtons();
 
             this.showSummaryOnDialog();
+
+            if (!_.isUndefined(callback) && _.isFunction(callback)) {
+                callback();
+            }
         },
 
         showSummaryOnDialog: function () {
-            var text = summaryToText(this.rrule);
+            var text = summaryToString(this.rrule);
             this.$("#repeat-summary").html(text);
         },
 
         renderPanel: function () {
             var template = _.template($("#repeatDialogTemplate").html(), {
-                rrule: this.rrule
+                rrule: this.rrule,
+                isNewRepeat: this.isNewRepeat
             });
-            this.$(".modal-body table").html(template);
+            this.$(".modal-content").html(template);
         },
 
         registerRepeatFreq: function () {
@@ -154,10 +133,9 @@ define([
             // panel will be rendered to update current rrule info. 
             // 
             // Since the panel is rendered, all elements on this panel will be
-            // recreated. So all listoners need to be render/register again. 
+            // recreated. So all listener need to be render/register again. 
             _this.$("#repeat-frequency").on("change", function () {
                 _this.rrule.freq = parseInt($(this).val());
-                _this.renderPanel();
                 _this.render();
             });
         },
@@ -175,19 +153,24 @@ define([
 
         registerRepeatOn: function () {
             var _this = this;
-            $("#repeat-on input[type=checkbox]").each(function () {
-                var dayOfWeek = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
-                $(this).change(function () {
-                    if (this.checked) {
-                        _this.rrule.byweekday.push(_.indexOf(dayOfWeek, this.name));
-                        _this.rrule.byweekday.sort();
-                    } else { // not checked
-                        var index = _.indexOf(dayOfWeek, this.name);
-                        _this.rrule.byweekday = _.without(_this.rrule.byweekday, index);
-                    }
-                    _this.showSummaryOnDialog();
-                });
+            this.$("#repeat-on button").on("click", function () {
+                // Toggle the button
+                $(this).toggleClass("active");
+
+                // Convert from string to int
+                var index = parseInt(this.getAttribute("data-index"));
+
+                if ($(this).hasClass("active")) {
+                    _this.rrule.byweekday.push(index);
+                    _this.rrule.byweekday.sort();
+                } else { // not checked
+                    console.log(index + ": " + _this.rrule.byweekday.toString());
+                    _this.rrule.byweekday = _.without(_this.rrule.byweekday, index);
+                    console.log(_.without(_this.rrule.byweekday, index));
+
+                }
+                _this.showSummaryOnDialog();
             });
         },
 
@@ -234,9 +217,48 @@ define([
                 startDate: _this.rrule.dtstart || _this.acalEvent.start
             }).on("changeDate", function (e) {
                 _this.rrule.until = e.date;
-                console.log(_this.rrule.until);
+                _this.showSummaryOnDialog();
             }).on("hide", function () {
                 hidingDatepicker = true;
+            });
+        },
+
+        registerButtons: function () {
+            var _this       = this,
+                repeatDone  = this.$("#repeat-done"),
+                repeatClose = this.$("#repeat-close"),
+                isSetRepeat = !_.isNull(this.rrule);
+
+            // Using Underscore feature that only set the variable isSetRepeat
+            // to ture once
+            var toSetRepeat = _.once(function () {
+                isSetRepeat = true;
+            });
+
+            // Done button listener
+            repeatDone.on("click", function () {
+                if (RRule.WEEKLY === _this.rrule.freq && 0 === _this.rrule.byweekday.length) {
+                    alert("Cannot add this repeating event without setting any by day.");
+                    return;
+                }
+
+                // This method will only be called once
+                toSetRepeat();
+
+                // Trigger rrule update
+                _this.editorPanel.trigger("rruleUpdate", _this.rrule);
+
+                // Hide the dialog
+                _this.$el.modal("hide");
+            });
+
+            // Close button listener
+            repeatClose.on("click", function () {
+                // Uncheck if the repeat is not set
+                console.log(isSetRepeat);
+                if (_this.isNewRepeat || !isSetRepeat) {
+                    _this.editorPanel.trigger("cancelRepeat");
+                }
             });
         }
     });
@@ -255,16 +277,10 @@ define([
 
             // Using this.acalEvent instead of using this.model is to improve
             // the code more readable
-            this.acalEvent = this.model;
-            this.rrule = this.acalEvent.get("rrule");
-            this.start = this.acalEvent.get("start");
-
-            this.repeatDialog = new RepeatDialog({
-                editorPanel: this,
-                rrule: this.rrule,
-                start: this.start
-            });
-            
+            this.acalEvent   = this.model;
+            this.rrule       = this.acalEvent.get("rrule");
+            this.dtstart     = this.acalEvent.get("start");
+            this.isNewRepeat = _.isNull(this.rrule);
             this.renderEditorTemplate(this.acalEvent);
 
             var _this = this,
@@ -272,11 +288,12 @@ define([
                 hidingDatepicker = false;
 
             _this.registerDaterangepicker();
-            _this.registerCheckbox();
             _this.registerRepeatDialog();
+            _this.registerCheckbox();
         },
 
         renderEditorTemplate: function (acalEvent) {
+            // Get start
             var startTime = acalEvent.get("start").toString(),
                 endTime = acalEvent.get("end") ? acalEvent.get("end").toString() : startTime;
 
@@ -297,7 +314,7 @@ define([
         registerDaterangepicker: function () {
             var _this = this,
 
-                /* input field of date range select */
+                // Input field of date range select
                 dateTimeRangeInput = _this.$("#date-time-range"),
                 dateRangeInput = _this.$("#date-range");
 
@@ -324,15 +341,15 @@ define([
         },
 
         registerCheckbox: function () {
-            var _this = this,
-                rrule = this.acalEvent.get("rrule"),
-                isSetRepeat = !_.isNull(rrule),
+            var _this         = this,
+                rrule         = this.acalEvent.get("rrule"),
+                isSetRepeat   = !_.isNull(rrule),
                 repeatSumArea = this.$("#event-repeat-summary-area"),
-                repeatEdit = this.$("#event-repeat-edit"),
+                repeatEdit    = this.$("#event-repeat-edit"),
 
                 // input field of date range select
                 dateTimeRangeInput = _this.$("#date-time-range"),
-                dateRangeInput = _this.$("#date-range"),
+                dateRangeInput     = _this.$("#date-range"),
 
                 // checkbox for all day and repeat
                 allDayCheckbox = this.$("#check-allday"),
@@ -356,9 +373,18 @@ define([
 
             var registerRepeatEditBtn = _.once(function () {
                 repeatEdit.on("click", function () {
+                    if (!_this.isNewRepeat) {
+                        _this.repeatDialog.render({dtstart: _this.acalEvent.get("start")});
+                    }
                     _this.repeatDialog.$el.modal("show");
-                    console.log(_this.repeatDialog);
+                    console.log(_this.rrule);
                 });
+            });
+
+            // Using Underscore feature that only set the variable isSetRepeat
+            // to ture once
+            var toSetRepeat = _.once(function () {
+                isSetRepeat = true;
             });
 
             allDayCheckbox.on("ifToggled", function () {
@@ -369,11 +395,10 @@ define([
 
             repeatCheckbox.on("ifChecked", function (event) {
                 if (!isSetRepeat) {
-                    rrule = {
-                        freq: RRule.WEEKLY,
-                        interval: 1,
-                        byweekday: []
-                    };
+                    console.log(_this.isNewRepeat);
+                    if (_this.isNewRepeat) {
+                        _this.repeatDialog.render({dtstart: _this.acalEvent.get("start")});
+                    }
                     _this.repeatDialog.$el.modal("show");
                 } else {
                     repeatSumArea.show();
@@ -392,7 +417,13 @@ define([
                 registerRepeatEditBtn();
             }
 
+            // listeners for 'rruleUpdate' and 'cancelRepeat' status
+            // The callback function will be called when any status
+            // is triggered
             this.listenTo(this, "rruleUpdate", function (newRRule) {
+                toSetRepeat();
+
+                console.log(isSetRepeat);
                 _this.rrule = rrule = newRRule;
                 _this.showSummaryOnPanel(rrule);
                 repeatSumArea.show();
@@ -405,40 +436,61 @@ define([
         },
 
         registerRepeatDialog: function () {
-            this.repeatDialog.render();
+
+            /**
+             * Initialize RepeatDialog
+             * @type {Object}
+             */
+            this.repeatDialog = new RepeatDialog({
+                editorPanel: this,
+                rrule: this.rrule,
+                dtstart: this.dtstart
+            });
         },
 
         showSummaryOnPanel: function (rrule) {
-            var text = summaryToText(rrule);
+            var text = summaryToString(rrule);
             this.$("#event-repeat-summary-text").html(text);
         },
 
         generateId: function () {
             return new Date().getTime().toString();
         },
+
+        isBlank: function (str) {
+            return /^\s*$/.test(str);
+        },
+
         close: function () {
+            $("#main-panel").show();
             this.calendarView.trigger("show");
             this.$el.hide();
             $(".daterangepicker").remove();
             $(".modal-body table").children().remove();
         },
+        
         save: function () {
-            if (this.$("#event-title-input").val() === "" && !confirm("Are you sure you want to save this event without title?")) {
+            var title = this.$("#event-title-input").val(),
+                location = this.$("#event-location-input").val(),
+                description = this.$("#event-description-input").val();
+
+            if (title === "" && !confirm("Are you sure you want to save this event without title?")) {
                 return;
             }
-            console.log(this.rrule);
 
             if (!_.isNull(this.rrule)) {
                 this.rrule.dtstart = this.acalEvent.get("start");
             }
 
             this.acalEvent.set({
-                "title": this.$("#event-title-input").val() || "Untitled Event",
+                "title": title || "Untitled Event",
                 "allDay": this.acalEvent.get("allDay"),
                 "start": this.acalEvent.get("start"),
                 "end": this.acalEvent.get("end"),
                 "rrule": this.rrule,
-                "last_modified": new Date()
+                "last_modified": new Date(),
+                "location": this.isBlank(location) ? null : location,
+                "description": this.isBlank(description) ? null : description
             });
 
             if (this.acalEvent.isNew()) {
@@ -449,10 +501,10 @@ define([
                     success: this.close()
                 });
             } else {
-                this.collection.get(this.acalEvent.get("_id")).save(this.acalEvent.toJSON(), {
+                this.acalEvent.save({}, {
                     success: this.close()
                 });
-                console.log(this.collection);
+                this.collection.trigger("update", this.acalEvent);
             }
         },
         delete: function () {

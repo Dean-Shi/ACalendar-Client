@@ -1,0 +1,13 @@
+{
+  "name": "jquery-icheck",
+  "homepage": "https://github.com/fronteed/iCheck",
+  "_release": "1e1382d30c",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "1e1382d30cb8d965b50ab4ae169380fa00bdcd5e"
+  },
+  "_source": "git://github.com/fronteed/iCheck.git",
+  "_target": "*",
+  "_originalSource": "jquery-icheck"
+}

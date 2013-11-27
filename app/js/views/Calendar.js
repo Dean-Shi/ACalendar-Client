@@ -14,7 +14,8 @@ define([
     'fullCalendar',
     'bootstrap',
     'jqueryui',
-    'qtip'
+    'qtip',
+    'datepicker'
 ], function ($, _, Backbone, RRule, EventEditorView, Event, Events) {
     "use strict";
 
@@ -55,11 +56,12 @@ define([
         render: function (jsEvent) {
             this.$el.elements.tooltip.stop(1, 1);
             this.$el.reposition(jsEvent).toggle(true, jsEvent);
+            this.listener();
         },
         set: function (start, end, allDay, content) {
-            this.start           = start;
-            this.end             = end;
-            this.allDay          = allDay;
+            this.start  = start;
+            this.end    = end;
+            this.allDay = allDay;
             this.$el.set({
                 "content.text": content
             });
@@ -109,6 +111,7 @@ define([
             }
 
             createButton.on("click", createEventCallBack);
+
             titleInput.on("keydown", function (e) {
                 if (e.keyCode === 13) {
                     createEventCallBack();
@@ -116,15 +119,17 @@ define([
             });
 
             advanceEditor.on("click", function () {
+                var titleVal = titleInput.val();
                 var fcEvent = {
                     _id: null,
-                    title: titleInput.val(),
+                    title: titleVal,
                     allDay: _this.allDay,
                     start: _this.start,
                     end: _this.end,
                     rrule: null,
                     last_modified: null
                 };
+                console.log(_this.calendar);
                 _this.calendarView.hideView();
                 _this.eventEditorView.model = new Event(fcEvent);
                 _this.eventEditorView.render();
@@ -134,6 +139,30 @@ define([
             cancelButton.on("click", function () {
                 _this.hide();
             });
+        }
+    });
+
+    var InfoDialog = Backbone.View.extend({
+        el: "#dialog",
+        initialize: function (attr) {
+            this.$el.modal({
+                backdrop: false
+            });
+
+            this.event = attr.toJSON();
+            this.render();
+            this.show();
+        },
+
+        render: function () {
+            var template = _.template($("#infoDialogTemplate").html(), {
+                event: this.event
+            });
+            this.$(".modal-content").html(template);
+        },
+
+        show: function () {
+            this.$el.modal("show");
         }
     });
 
@@ -156,20 +185,23 @@ define([
             this.tooltip = new Tooltip();
             this.eventEditorView = new EventEditorView();
 
+            $("#mini-calendar").datepicker({
+                autoclose: true,
+            });
             this.render();
         },
         render: function() {
 
-            this.onloading = {
-                pleaseWaitDiv: $('#pleaseWaitDialog'),
+            // this.onloading = {
+            //     pleaseWaitDiv: $('#pleaseWaitDialog'),
 
-                showPleaseWait: function() {
-                    this.pleaseWaitDiv.modal("show");
-                },
-                hidePleaseWait: function () {
-                    this.pleaseWaitDiv.modal("hide");
-                }
-            };
+            //     showPleaseWait: function() {
+            //         this.pleaseWaitDiv.modal("show");
+            //     },
+            //     hidePleaseWait: function () {
+            //         this.pleaseWaitDiv.modal("hide");
+            //     }
+            // };
 
             this.$el.fullCalendar({
                 header: {
@@ -204,7 +236,9 @@ define([
                 success: function (records) {
                     console.log(records.toJSON());
 
-                    _this.listenTo(_this.collection, "add change update destroy", function () {
+                    _this.listenTo(_this.collection, "add update destroy", function (acalEvent) {
+                        var id = acalEvent.get("id");
+                        var rrule = acalEvent.get("rrule");
                         _this.$el.fullCalendar("refetchEvents");
                     });
                     _this.renderEvents();
@@ -230,7 +264,8 @@ define([
         },
 
         hideView: function () {
-            this.$el.hide();
+            //this.$el.hide();
+            $("#main-panel").hide();
         },
 
         resizeCalendar: function () {
@@ -260,10 +295,10 @@ define([
                         var duration = repeatingEvent.end ? repeatingEvent.end.getTime() - repeatingEvent.start.getTime() : 0;
 
                         for (var j = occurrences.length - 1; j >= 0; j--) {
-                            var acalEvent = _.clone(repeatingEvent);
-                            acalEvent.start = occurrences[j];
-                            acalEvent.end = new Date(acalEvent.start.getTime() + duration);
-                            _this.$el.fullCalendar("renderEvent", acalEvent);
+                            var event = _.clone(repeatingEvent);
+                            event.start = occurrences[j];
+                            event.end = new Date(event.start.getTime() + duration);
+                            _this.$el.fullCalendar("renderEvent", event);
                         };
                     };
                     callback(regularEvents);
@@ -277,11 +312,30 @@ define([
 
         select: function (start, end, allDay, jsEvent) {
             var _this = this;
-            var content = this.popover(start, end, allDay, null, true);
+            var format = this.getPopoverFormat(start, end, allDay);
+
+            var content = '<table>' +
+                              '<tbody>' +
+                                '<tr>' +
+                                  '<th>Date:  </th>' +
+                                  '<td id="tooltip-date">' + format.startTime + format.endTime + '</td>' +
+                                '</tr>' +
+                                '<tr>' +
+                                  '<th>Title: </th>' +
+                                  '<td><input id="tooltip-title-input" type="text" class="form-control"></td>' +
+                                '</tr>' +
+                                '<tr>' +
+                                  '<td colspan="2">' +
+                                    '<button id="tooltip-create-event" type="button" class="btn btn-xs btn-primary">Create</button>' +
+                                    '<button id="tooltip-cancel" type="button" class="btn btn-xs btn-default">Cancel</button>' +
+                                    '<a href="javascript:void(0)" id="advanced-edit">Advanced Edit</a>' +
+                                  '</td>' +
+                                '</tr>' +
+                              '</tbody>' +
+                            '</table>';
             
             this.tooltip.set(start, end, allDay, content);
             this.tooltip.render(jsEvent);
-            this.tooltip.listener();
         },
         unselect: function () {
             this.hideTooltip();
@@ -289,14 +343,19 @@ define([
         loading: function (bool) {
             if (bool) {
                 // console.log("loading");
-                this.onloading.showPleaseWait();
+                //this.onloading.showPleaseWait();
             }
             else {
                 // console.log("finished");
-                this.onloading.hidePleaseWait();
+                //this.onloading.hidePleaseWait();
             }
         },
         eventClick: function (event) {
+            var acalEvent = this.collection.get(event._id);
+            var format = this.getPopoverFormat(event.start, event.end, event.allDay);
+            acalEvent.set("date", format.startTime + (event.end && format.endTime || ""));
+            this.hideQtip(event);
+            new InfoDialog(acalEvent);
         },
         eventDrop: function (event, dayDelta, minuteDelta, allDay, revertFunc) {
             this.eventDropOrResize(event, revertFunc);
@@ -328,12 +387,11 @@ define([
         eventDragStart: function (event) {
             this.hideQtip(event);
         },
-        popover: function (start, end, allDay, title, isSelected) {
+        getPopoverFormat: function (start, end, allDay) {
             var startTime = new Date(start),
                 endTime = new Date(end),
                 startTimeFormat = "ddd, MMMM d",
-                endTimeFormat   = "",
-                content = "";
+                endTimeFormat   = "";
 
             if (end && (!allDay || startTime.getDate() != endTime.getDate())) {
                 endTimeFormat = " - ";
@@ -341,7 +399,7 @@ define([
                 if (startTime.getFullYear() != endTime.getFullYear()) {
                     endTimeFormat += startTimeFormat += ", yyyy";
                 }
-                else if (startTime.getDate() != endTime.getDate() || 
+                else if (startTime.getDate()  != endTime.getDate() || 
                          startTime.getMonth() != endTime.getMonth()) {
                     endTimeFormat += startTimeFormat;
                 } 
@@ -351,43 +409,19 @@ define([
                 startTimeFormat += ", h(:mm)tt";
                 endTimeFormat   += "h(:mm)tt";
             }
+
             startTime = $.fullCalendar.formatDate(startTime, startTimeFormat);
             endTime   = $.fullCalendar.formatDate(endTime, endTimeFormat);
 
-            if (isSelected) {
-                content  = '<table>' +
-                              '<tbody>' +
-                                '<tr>' +
-                                  '<th>Date:  </th>' +
-                                  '<td id="tooltip-date">' + startTime + endTime + '</td>' +
-                                '</tr>' +
-                                '<tr>' +
-                                  '<th>Title: </th>' +
-                                  '<td><input id="tooltip-title-input" type="text" class="form-control"></td>' +
-                                '</tr>' +
-                                '<tr>' +
-                                  '<td colspan="2">' +
-                                    '<button id="tooltip-create-event" type="button" class="btn btn-xs btn-primary">Create</button>' +
-                                    '<button id="tooltip-cancel" type="button" class="btn btn-xs btn-default">Cancel</button>' +
-                                    '<a href="javascript:void(0)" id="advanced-edit">Advanced Edit</a>' +
-                                  '</td>' +
-                                '</tr>' +
-                              '</tbody>' +
-                            '</table>';
-            }
-            else {
-                content = '<h3>' + title + '</h3>' + 
-                '<p><b>Date:</b> ' + startTime + 
-                (end && endTime+'</p>' || '');
-            }
-            return content;
+            return {
+                startTime: startTime,
+                endTime: endTime
+            };
         },
         eventRender: function (event, element) {
-            var content = this.popover(event.start, 
-                                       event.end, 
-                                       event.allDay, 
-                                       event.title, 
-                                       false);
+            var format = this.getPopoverFormat(event.start, event.end, event.allDay);
+            var content = '<h3>' + event.title + '</h3>' + '<p><b>Date:</b> ' + format.startTime + (event.end && format.endTime || "") + '</p>';
+
             var qtipID = event._id + (event.rrule ? "-" + event.start.getTime() : "");
             if (!_.isUndefined(this.elementArray[qtipID])) {
                  this.elementArray[qtipID].destroy(true);
@@ -421,11 +455,10 @@ define([
                     }
                 },
                 // Allow the user the mouseover the tooltip without it hiding
-                hide: { fixed: true, delay: 300 },
+                hide: { fixed: true, delay: 100 },
                 style:  "qtip-bootstrap"
             }).qtip("api");
 
-            // this.elementArray.push(qtipElement);
             this.elementArray[qtipID] = qtipElement;
         },
         eventAfterAllRender: function () {
@@ -435,7 +468,8 @@ define([
             this.tooltip.hide();
         },
         hideQtip: function (event) {
-            $("#qtip-" + event._id).qtip().hide();
+            var selector = "#qtip-" + event._id + (event.rrule ? "-" + event.start.getTime() : "");
+            $(selector).qtip().hide();
         },
         destroyQtip: function () {
             var qtipElement;

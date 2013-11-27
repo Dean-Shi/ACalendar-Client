@@ -1,0 +1,1 @@
+define(["backbone","models/Event"],function(e,t){return e.Collection.extend({model:t,url:"event"})});

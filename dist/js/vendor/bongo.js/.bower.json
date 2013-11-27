@@ -1,0 +1,21 @@
+{
+  "name": "bongo.js",
+  "description": "Store and query massive amounts of structured data on the browser. Built on IndexedDB.",
+  "main": "dist/bongo.min.js",
+  "ignore": [
+    "**/.*",
+    "src",
+    "tests",
+    "node_modules"
+  ],
+  "homepage": "https://github.com/aaronshaf/bongo.js",
+  "_release": "d2553db957",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "d2553db9577591a7aeb79b074547209ac99a55d2"
+  },
+  "_source": "git://github.com/aaronshaf/bongo.js.git",
+  "_target": "*",
+  "_originalSource": "bongo.js"
+}
