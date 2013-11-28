@@ -6,6 +6,7 @@ define([
     'views/EventEditor',
     'models/Event',
     'collections/Events',
+    'moment',
 
     /* Modules*/
     'modules/Backbone.sync',
@@ -15,8 +16,9 @@ define([
     'bootstrap',
     'jqueryui',
     'qtip',
-    'datepicker'
-], function ($, _, Backbone, RRule, EventEditorView, Event, Events) {
+    'datepicker',
+    'shortcuts'
+], function ($, _, Backbone, RRule, EventEditorView, Event, Events, moment) {
     "use strict";
 
     var Tooltip = Backbone.View.extend({
@@ -129,7 +131,7 @@ define([
                     rrule: null,
                     last_modified: null
                 };
-                console.log(_this.calendar);
+
                 _this.calendarView.hideView();
                 _this.eventEditorView.model = new Event(fcEvent);
                 _this.eventEditorView.render();
@@ -168,6 +170,16 @@ define([
 
     return Backbone.View.extend({
         el: "#calendar",
+        shortcuts: {
+            "w": "weekView",
+            "d": "dayView",
+            "m": "monthView",
+            "t": "today",
+            "up": "scrollUp",
+            "down": "scrollDown",
+            "left": "nextPage",
+            "right": "prePage"
+        },
         initialize: function(){
             _.bindAll(this, "select", 
                             "unselect",
@@ -177,20 +189,21 @@ define([
                             "eventResizeStart",
                             "eventDrop",
                             "eventResize",
-                            "eventClick"
+                            "eventClick",
+                            "viewDisplay"
                             );
 
             this.eventResizing = false;
             this.elementArray = [];
             this.tooltip = new Tooltip();
             this.eventEditorView = new EventEditorView();
-
-            $("#mini-calendar").datepicker({
-                autoclose: true,
-            });
+            _.extend(this, new Backbone.Shortcuts);
+            this.delegateShortcuts();
+            
             this.render();
         },
         render: function() {
+            var _this = this;
 
             // this.onloading = {
             //     pleaseWaitDiv: $('#pleaseWaitDialog'),
@@ -208,13 +221,13 @@ define([
                     left: "prev,next today title",
                     right: "month,agendaWeek,agendaDay"
                 },
-                height: $(window).height() - 80,
+                height: $(window).height() - 10,
                 timeFormat: "h:mmtt{ - h:mmtt}",
                 editable: true,
                 selectable: true,
                 selectHelper: true,
                 select: this.select,
-                slotMinutes: 15,
+                slotMinutes: 30,
                 unselect: this.unselect,
                 unselectCancel: ".qtip",
                 loading: this.loading,
@@ -224,14 +237,24 @@ define([
                 eventDrop: this.eventDrop,
                 eventResize: this.eventResize,
                 eventRender: this.eventRender,
-                eventAfterAllRender: this.eventAfterAllRender
+                eventAfterAllRender: this.eventAfterAllRender,
+                viewDisplay: this.viewDisplay
             });
             
             this.tooltip.collection = this.eventEditorView.collection = this.collection;
             this.tooltip.calendarView = this.eventEditorView.calendarView = this;
             this.tooltip.eventEditorView = this.eventEditorView;
 
-            var _this = this;
+            $("#mini-calendar").datepicker({
+                autoclose: true,
+            }).on("changeDate", function (e) {
+                _this.$el.fullCalendar("gotoDate", e.date);
+                _this.$el.fullCalendar("changeView", "agendaDay");
+            });
+
+            this.resizeCalendar();
+            this.agendaTable = $("table.fc-agenda-slots:visible").parent().parent();
+
             this.collection.fetch({
                 success: function (records) {
                     console.log(records.toJSON());
@@ -250,11 +273,46 @@ define([
                 // There might be a bug in fullCalendar lib that if resizing event is
                 // triggered, this call back function is called as well.
                 if (_this.eventResizing) return;
-                //setTimeline();
                 _this.resizeCalendar();
                 _this.destroyQtip();
                 _this.$el.fullCalendar("rerenderEvents");
             });
+        },
+        weekView: function () {
+            this.$el.fullCalendar("changeView", "agendaWeek");
+            this.hideQtip();
+        },
+
+        dayView: function () {
+            this.$el.fullCalendar("changeView", "agendaDay");
+            this.hideQtip();
+        },
+
+        monthView: function () {
+            this.$el.fullCalendar("changeView", "month");
+            this.hideQtip();
+        },
+
+        today: function () {
+            this.$el.fullCalendar("today");
+        },
+
+        scrollUp: function () {
+            var agendaTable = $("table.fc-agenda-slots:visible").parent().parent();
+            agendaTable.scrollTop(agendaTable.scrollTop() - 42);
+        },
+
+        scrollDown: function () {
+            var agendaTable = $("table.fc-agenda-slots:visible").parent().parent();
+            agendaTable.scrollTop(agendaTable.scrollTop() + 42);
+        },
+
+        nextPage: function () {
+            this.$el.fullCalendar("next");
+        },
+
+        prePage: function () {
+            this.$el.fullCalendar("prev");
         },
 
         showView: function () {
@@ -269,7 +327,7 @@ define([
         },
 
         resizeCalendar: function () {
-            this.$el.fullCalendar("option", "height", $(window).height() - 80);
+            this.$el.fullCalendar("option", "height", $(window).height() - 10);
         },
 
         renderEvents: function () {
@@ -387,6 +445,65 @@ define([
         eventDragStart: function (event) {
             this.hideQtip(event);
         },
+        viewDisplay: function () {
+            if (!_.isUndefined(this.timelineInterval)) {
+                window.clearInterval(this.timelineInterval);
+            }
+            var calendar = this.$el;
+            this.timelineInterval = window.setInterval(setTimeline, 1000);
+            try {
+                setTimeline(this.$el);
+            } catch (err) { }
+
+            function setTimeline () {
+                var curTime = new Date();
+                if(curTime.getHours() == 0 && curTime.getMinutes() <= 5) // Because I am calling this function every 5 minutes
+                {// the day has changed
+                    var todayElem = $(".fc-today");
+                    todayElem.removeClass("fc-today");
+                    todayElem.removeClass("fc-state-highlight");
+                    
+                    todayElem.next().addClass("fc-today");
+                    todayElem.next().addClass("fc-state-highlight");
+                }
+                
+                var parentDiv = $(".fc-agenda-slots:visible").parent();
+                var timeline = parentDiv.children(".timeline");
+                var currentHours   = curTime.getHours();
+                var timeDisplay = moment().format("h:mm:ss a");
+                var timelineText = '<span style="position:absolute;' + (currentHours > 12 && "margin-top:-23px") + '">' + timeDisplay + '</span>';
+                if (timeline.length == 0) { //if timeline isn't there, add it
+                    timeline = $("<div>").addClass("timeline").html(timelineText);
+                    parentDiv.prepend(timeline);
+                }
+
+                var curCalView = calendar.fullCalendar("getView");
+                if (curCalView.visStart < curTime && curCalView.visEnd > curTime) {
+                    timeline.show();
+                } else {
+                    timeline.hide();
+                }
+            
+                var curSeconds = (curTime.getHours() * 60 * 60) + (curTime.getMinutes() * 60) + curTime.getSeconds();
+                var percentOfDay = curSeconds / 86400; //24 * 60 * 60 = 86400, # of seconds in a day
+                var topLoc = Math.floor(parentDiv.height() * percentOfDay);
+            
+                timeline.css({"top" : topLoc + "px", "padding-bottom" : "10px"}).html(timelineText);
+
+                if (curCalView.name == "agendaWeek") { //week view, don't want the timeline to go the whole way across
+                    var dayCol = $(".fc-today:visible");
+                    if(dayCol.position() != null)
+                    {
+                        var left = dayCol.position().left + 1;
+                        var width = dayCol.width();
+                        timeline.css({
+                            left: left + "px",
+                            width: width + "px"
+                        });
+                    }
+                }
+            }
+        },
         getPopoverFormat: function (start, end, allDay) {
             var startTime = new Date(start),
                 endTime = new Date(end),
@@ -419,6 +536,15 @@ define([
             };
         },
         eventRender: function (event, element) {
+            var _this = this;
+
+            // it will not be fired
+            element.on("dblclick", function() {
+                _this.hideView();
+                _this.eventEditorView.model = _this.collection.get(event._id);
+                _this.eventEditorView.render();
+            });
+
             var format = this.getPopoverFormat(event.start, event.end, event.allDay);
             var content = '<h3>' + event.title + '</h3>' + '<p><b>Date:</b> ' + format.startTime + (event.end && format.endTime || "") + '</p>';
 
@@ -426,7 +552,6 @@ define([
             if (!_.isUndefined(this.elementArray[qtipID])) {
                  this.elementArray[qtipID].destroy(true);
             }
-            var _this = this;
             var qtipElement = element.qtip({
                 id: qtipID,
                 content: {
@@ -461,15 +586,23 @@ define([
 
             this.elementArray[qtipID] = qtipElement;
         },
+        showAdvanceEditor: function (eventID) {
+            this.hideView();
+            this.eventEditorView.model = _this.collection.get(eventID);
+            this.eventEditorView.render();
+        },
         eventAfterAllRender: function () {
-            console.log("all render");
         },
         hideTooltip: function () {
             this.tooltip.hide();
         },
         hideQtip: function (event) {
-            var selector = "#qtip-" + event._id + (event.rrule ? "-" + event.start.getTime() : "");
-            $(selector).qtip().hide();
+            //var selector = "#qtip-" + event._id + (event.rrule ? "-" + event.start.getTime() : "");
+            //$(selector).qtip().hide();
+            
+            for (var i = 0, l = this.elementArray.length; i < l; i++) {
+                this.elementArray[i].hide();
+            }
         },
         destroyQtip: function () {
             var qtipElement;

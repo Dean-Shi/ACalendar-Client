@@ -4,14 +4,14 @@
 ------------------------------------------------------------------------*/
 .container {
 	max-width: 100%;
-	padding: 0 20px;
+	padding: 0 5px;
 }
 body>.container {
-	padding: 0 10px;
+	padding: 0 5px;
 }
 .container aside {
 	display: table-cell; 
-	padding: 0 5px;
+	padding-right: 5px;
 	vertical-align: top;
 }
 .container section {
@@ -113,6 +113,24 @@ body>.container {
 .fc-event:hover .ui-resizable-handle {
 	display: block;
 	visibility: visible;
+}
+.fc-agenda-slots .fc-widget-header,
+.fc-agenda-allday .fc-widget-header {
+	background-color: #eee;
+}
+/* Calendar Timeline
+------------------------------------------------------------------------*/
+.timeline {
+    position: absolute;
+    left: 59px;
+    border: none;
+    border-top: 3px solid red;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    z-index: 1000;
+    font-weight: bold;
+    color: red;
 }
 
 /* Event Editor
@@ -287,6 +305,7 @@ body.modal-open {
 	-khtml-user-select: none;
 	-webkit-user-select: none;
 	user-select: none;
+	margin: 5px 0;
 }
 #calendar .fc-state-down {
 	background-color: #e6e6e6;

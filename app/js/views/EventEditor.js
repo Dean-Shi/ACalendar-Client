@@ -9,7 +9,8 @@ define([
     'bootstrap',
     'daterangepicker',
     'datepicker',
-    'icheck'
+    'icheck',
+    'shortcuts'
 ], function ($, _, Backbone, moment, RRule) {
 
     var summaryToString = function (rrule) {
@@ -221,6 +222,18 @@ define([
             }).on("hide", function () {
                 hidingDatepicker = true;
             });
+
+            endsCountInput.on("change", function () {
+                var count = parseInt(endsCountInput.val());
+
+                if (count <= 0) {
+                    count = 1;
+                    endsCountInput.val(count);
+                }
+
+                _this.rrule["count"] = count;
+                _this.showSummaryOnDialog();
+            });
         },
 
         registerButtons: function () {
@@ -270,7 +283,14 @@ define([
             "click #event-return": "close",
             "click #event-delete": "delete"
         },
-        initialize: function () {},
+        shortcuts: {
+            "shift+enter": "save",
+            "esc": "close"
+        },
+        initialize: function () {
+            _.extend(this, new Backbone.Shortcuts);
+            this.delegateShortcuts();
+        },
         render: function () {
             // Show the view panel
             this.$el.show();
@@ -395,7 +415,6 @@ define([
 
             repeatCheckbox.on("ifChecked", function (event) {
                 if (!isSetRepeat) {
-                    console.log(_this.isNewRepeat);
                     if (_this.isNewRepeat) {
                         _this.repeatDialog.render({dtstart: _this.acalEvent.get("start")});
                     }

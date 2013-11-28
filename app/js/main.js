@@ -35,6 +35,7 @@ requirejs.config({
         icheck: 'vendor/jquery-icheck/jquery.icheck.min',
         bongo: 'vendor/bongo.js/dist/bongo.min',
         keymaster: 'libs/keymaster.min',
+        shortcuts: 'libs/backbone.shortcuts.min',
 
         templates: '../templates'
     },
@@ -48,6 +49,7 @@ requirejs.config({
             deps: [ 'underscore', 'jquery' ],
             exports: 'Backbone'
         },
+
         jqueryui: [ 'jquery' ],
         'fullCalendar': [ 'jquery' ],
         'bootstrap': [ 'jquery' ],
@@ -56,7 +58,8 @@ requirejs.config({
         'icheck': [ 'jquery' ],
         'keymaster': {
             exports: 'key'
-        }
+        },
+        'shortcuts': [ 'underscore', 'backbone', 'keymaster' ]
     },
     urlArgs: 'bust=' + (new Date()).getTime()
 });

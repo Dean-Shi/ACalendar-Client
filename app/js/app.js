@@ -1,7 +1,8 @@
 define([
+    'jquery',
     'backbone',
     'routers/router',
-], function (Backbone, Router) {
+], function ($, Backbone, Router) {
     return {
         init: function () {
             new Router;
@@ -9,15 +10,18 @@ define([
         },
         setupPrint: function () {
             var calendar = $("#calendar");
+            var miniCal = $("#mini-calendar").parent();
             var w = calendar.css("width");
 
             var beforePrint = function() {
                 // Prepare calendar for printing
-                calendar.css("width", "980");
+                miniCal.hide();
+                calendar.css("width", "1010");
                 calendar.fullCalendar("render");
             };
             var afterPrint = function() {
                 // Reverse the width of calendar
+                miniCal.show();
                 calendar.css("width", w);
                 calendar.fullCalendar("render");
             };
