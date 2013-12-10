@@ -12,7 +12,8 @@ define([
     'icheck',
     'shortcuts'
 ], function ($, _, Backbone, moment, RRule) {
-
+    "use strict";
+    
     var summaryToString = function (rrule) {
         var summaryText = "";
         var intervalLabel = ["years", "months", "weeks", "days"];
@@ -65,7 +66,6 @@ define([
         return summaryText;
     };
 
-
     var RepeatDialog = Backbone.View.extend({
         el: "#dialog",
         initialize: function (attrs) {
@@ -73,8 +73,8 @@ define([
 
             this.editorPanel = attrs.editorPanel;
             this.rrule       = attrs.rrule;
+            this.tmprrule    = attrs.rrule;
             this.dtstart     = attrs.dtstart;
-
             this.isNewRepeat = _.isNull(this.rrule);
 
             if (this.isNewRepeat) {
@@ -88,6 +88,8 @@ define([
 
                 // Add the day of the start day to by week day
                 this.rrule.byweekday.push(this.rrule.dtstart.getDay());
+
+                this.tmprrule = _.clone(this.rrule);
             }
 
             this.$el.modal({
@@ -125,6 +127,7 @@ define([
                 isNewRepeat: this.isNewRepeat
             });
             this.$(".modal-content").html(template);
+            this.rrule.byweekday = [];
         },
 
         registerRepeatFreq: function () {
@@ -155,7 +158,16 @@ define([
         registerRepeatOn: function () {
             var _this = this;
 
-            this.$("#repeat-on button").on("click", function () {
+            this.$("#repeat-on button")
+            .each(function () {
+                var dayOfWeek = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+                var index = parseInt(this.getAttribute("data-index"));
+                if ($(this).hasClass("active")) {
+                    _this.rrule.byweekday.push(index);
+                    _this.rrule.byweekday.sort();
+                }
+            })
+            .on("click", function () {
                 // Toggle the button
                 $(this).toggleClass("active");
 
@@ -220,7 +232,7 @@ define([
                 _this.rrule.until = e.date;
                 _this.showSummaryOnDialog();
             }).on("hide", function () {
-                hidingDatepicker = true;
+                //hidingDatepicker = true;
             });
 
             endsCountInput.on("change", function () {
@@ -239,14 +251,7 @@ define([
         registerButtons: function () {
             var _this       = this,
                 repeatDone  = this.$("#repeat-done"),
-                repeatClose = this.$("#repeat-close"),
-                isSetRepeat = !_.isNull(this.rrule);
-
-            // Using Underscore feature that only set the variable isSetRepeat
-            // to ture once
-            var toSetRepeat = _.once(function () {
-                isSetRepeat = true;
-            });
+                repeatClose = this.$("#repeat-close");
 
             // Done button listener
             repeatDone.on("click", function () {
@@ -254,9 +259,6 @@ define([
                     alert("Cannot add this repeating event without setting any by day.");
                     return;
                 }
-
-                // This method will only be called once
-                toSetRepeat();
 
                 // Trigger rrule update
                 _this.editorPanel.trigger("rruleUpdate", _this.rrule);
@@ -267,11 +269,9 @@ define([
 
             // Close button listener
             repeatClose.on("click", function () {
-                // Uncheck if the repeat is not set
-                console.log(isSetRepeat);
-                if (_this.isNewRepeat || !isSetRepeat) {
-                    _this.editorPanel.trigger("cancelRepeat");
-                }
+                _this.rrule = _.clone(_this.tmprrule);
+
+                _this.editorPanel.trigger("cancelRepeat", _this.tmprrule);
             });
         }
     });
@@ -285,7 +285,7 @@ define([
         },
         shortcuts: {
             "shift+enter": "save",
-            "esc": "close"
+            "shift+esc": "close"
         },
         initialize: function () {
             _.extend(this, new Backbone.Shortcuts);
@@ -397,7 +397,6 @@ define([
                         _this.repeatDialog.render({dtstart: _this.acalEvent.get("start")});
                     }
                     _this.repeatDialog.$el.modal("show");
-                    console.log(_this.rrule);
                 });
             });
 
@@ -449,7 +448,8 @@ define([
                 registerRepeatEditBtn();
             });
 
-            this.listenTo(this, "cancelRepeat", function () {
+            this.listenTo(this, "cancelRepeat", function (rrule) {
+                if (_this.rrule != null) return;
                 repeatCheckbox.iCheck("uncheck");
             });
         },

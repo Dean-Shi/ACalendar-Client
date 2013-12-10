@@ -591,10 +591,13 @@ js/vendor/underscore/test/vendor/qunit.css
 js/main.js
 ----------------
 js/libs/rrule.js
+js/libs/keymaster.min.js
+js/libs/backbone.shortcuts.min.js
 js/views/EventEditor.js
 js/models/Event.js
 js/collections/Events.js
 js/modules/Backbone.sync.js
+js/libs/jquery-ui.custom.min.js
 js/views/Calendar.js
 js/routers/router.js
 js/app.js

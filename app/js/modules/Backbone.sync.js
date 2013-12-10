@@ -70,6 +70,7 @@ define([
                 // Success
                 if (!error) {
                     console.log(method + " event in db: " + id);
+                    console.log(event);
                     options.success(event);
                 }
             });

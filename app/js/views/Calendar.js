@@ -21,6 +21,58 @@ define([
 ], function ($, _, Backbone, RRule, EventEditorView, Event, Events, moment) {
     "use strict";
 
+    var summaryToString = function (rrule) {
+        var summaryText = "";
+        var intervalLabel = ["years", "months", "weeks", "days"];
+        var frequency = ["Annually", "Monthly", "Weekly", "Daily"];
+        var WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        var MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // In the summary, the interval will be displayed first
+        if (rrule.interval === 1) {
+            summaryText += frequency[rrule.freq];
+        } else {
+            summaryText += "Every " + rrule.interval + " " + intervalLabel[rrule.freq];
+        }
+
+        // Print the format for each frequence
+        if (RRule.WEEKLY === rrule.freq) {
+            summaryText += " on ";
+            if (rrule.byweekday.length === WEEKDAY.length) {
+                summaryText += "all days";
+            } else if (rrule.byweekday.length === 0) {
+                summaryText += "[Missing days]";
+            } else {
+                var l = rrule.byweekday.length - 1;
+                for (var i = 0; i < l; i++) {
+                    var index = rrule.byweekday[i];
+                    summaryText += WEEKDAY[index] + ", ";
+                }
+                var index = rrule.byweekday[l];
+                summaryText += WEEKDAY[index];
+            }
+        } else if (RRule.MONTHLY === rrule.freq) {
+            summaryText += " on day ";
+            var onDay = rrule.dtstart;
+            summaryText += onDay.getDate();
+        } else if (RRule.YEARLY === rrule.freq) {
+            summaryText += " on ";
+            var onDay = rrule.dtstart;
+            summaryText += MONTH[onDay.getMonth()] + " " + onDay.getDate();
+        }
+
+        if (rrule.count) { // rrule has count
+            if (rrule.count === 1) {
+                summaryText = "Once";
+            } else {
+                summaryText += ", " + rrule.count + " times";
+            }
+        } else if (rrule.until) { // rrule has until
+            summaryText += ", until " + new Date(rrule.until).toDateString();
+        }
+        return summaryText;
+    };
+
     var Tooltip = Backbone.View.extend({
         initialize: function () {
             var _this = this;
@@ -152,6 +204,9 @@ define([
             });
 
             this.event = attr.toJSON();
+            if (!_.isUndefined(this.event.rrule) && !_.isNull(this.event.rrule)) {
+                this.event.summaryToString = summaryToString(this.event.rrule);
+            }
             this.render();
             this.show();
         },
@@ -177,8 +232,8 @@ define([
             "t": "today",
             "up": "scrollUp",
             "down": "scrollDown",
-            "left": "nextPage",
-            "right": "prePage"
+            "right": "nextPage",
+            "left": "prePage"
         },
         initialize: function(){
             _.bindAll(this, "select", 
@@ -194,12 +249,12 @@ define([
                             );
 
             this.eventResizing = false;
-            this.elementArray = [];
+            this.elementArray = {};
             this.tooltip = new Tooltip();
             this.eventEditorView = new EventEditorView();
             _.extend(this, new Backbone.Shortcuts);
             this.delegateShortcuts();
-            
+
             this.render();
         },
         render: function() {
@@ -274,7 +329,6 @@ define([
                 // triggered, this call back function is called as well.
                 if (_this.eventResizing) return;
                 _this.resizeCalendar();
-                _this.destroyQtip();
                 _this.$el.fullCalendar("rerenderEvents");
             });
         },
@@ -431,8 +485,7 @@ define([
                 if (!_.isNull(rrule)) {
                     rrule.dtstart = event.start;
                 }
-
-                this.collection.get(event._id).save({start: event.start, end: event.end, rrule: rrule});
+                acalEvent.save({start: event.start, end: event.end, allDay: event.allDay, rrule: rrule});
             // }
             // else {
             //     revertFunc();
@@ -549,6 +602,7 @@ define([
             var content = '<h3>' + event.title + '</h3>' + '<p><b>Date:</b> ' + format.startTime + (event.end && format.endTime || "") + '</p>';
 
             var qtipID = event._id + (event.rrule ? "-" + event.start.getTime() : "");
+
             if (!_.isUndefined(this.elementArray[qtipID])) {
                  this.elementArray[qtipID].destroy(true);
             }
@@ -599,15 +653,8 @@ define([
         hideQtip: function (event) {
             //var selector = "#qtip-" + event._id + (event.rrule ? "-" + event.start.getTime() : "");
             //$(selector).qtip().hide();
-            
-            for (var i = 0, l = this.elementArray.length; i < l; i++) {
-                this.elementArray[i].hide();
-            }
-        },
-        destroyQtip: function () {
-            var qtipElement;
-            while (qtipElement = this.elementArray.pop()) {
-                qtipElement.destroy(true);
+            for (var qtipID in this.elementArray) {
+                this.elementArray[qtipID].hide();
             }
         }
     });
