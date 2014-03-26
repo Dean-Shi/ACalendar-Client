@@ -255,6 +255,7 @@ define([
             _.extend(this, new Backbone.Shortcuts);
             this.delegateShortcuts();
 
+            this.retrieveWeather();
             this.render();
         },
         render: function() {
@@ -425,13 +426,16 @@ define([
         select: function (start, end, allDay, jsEvent) {
             var _this = this;
             var format = this.getPopoverFormat(start, end, allDay);
-
+            var weather = start.toDateString() == end.toDateString() ? _this.getWeather(start.toDateString()) : "";
             var content = '<table>' +
                               '<tbody>' +
                                 '<tr>' +
                                   '<th>Date:  </th>' +
                                   '<td id="tooltip-date">' + format.startTime + format.endTime + '</td>' +
                                 '</tr>' +
+
+                                weather +
+                                
                                 '<tr>' +
                                   '<th>Title: </th>' +
                                   '<td><input id="tooltip-title-input" type="text" class="form-control"></td>' +
@@ -656,6 +660,36 @@ define([
             for (var qtipID in this.elementArray) {
                 this.elementArray[qtipID].hide();
             }
+        },
+        retrieveWeather: function () {
+            var _this = this;
+            console.log(_this.weather);
+            if (_.isUndefined(_this.weather)) {
+                $.ajax({
+                    url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%3D'http%3A%2F%2Fxml.weather.yahoo.com%2Fforecastrss%2FCAXX0518_f.xml'&format=json&diagnostics=true"
+                }).done(function (data) {
+                    _this.weather = data.query.results.item.forecast;
+
+                    for (var i = 0, len = _this.weather.length; i < len; i++) {
+                        _this.weather[i].date = new Date(_this.weather[i].date).toDateString();
+                    }
+                });
+            }
+        },
+        getWeather: function (date) {
+            var weather = this.weather;
+
+            for (var i = 0, len = weather.length; i < len; i++) {
+                if (weather[i].date == date) {
+                    var weatherToString =  '<tr>' +
+                                  '<th>Weather: </th>' +
+                                  '<td>' + weather[i].text + '</td>' +
+                                '</tr>';
+                    return weatherToString; 
+                }
+            }
+
+            return "";
         }
     });
 });
