@@ -29,6 +29,7 @@ requirejs.config({
             'http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.2.0/js/bootstrap-datepicker.min',
             'vendor/bootstrap-datepicker/js/bootstrap-datepicker'
         ],
+        bootstrapselect: 'http://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.4.1/bootstrap-select.min',
         rrule : 'libs/rrule',
         daterangepicker: 'vendor/bootstrap-daterangepicker/daterangepicker',
         qtip: 'vendor/qtip2/jquery.qtip.min',
@@ -59,6 +60,7 @@ requirejs.config({
         'keymaster': {
             exports: 'key'
         },
+        'bootstrapselect': [ 'jquery' ],
         'shortcuts': [ 'underscore', 'backbone', 'keymaster' ]
     },
     urlArgs: 'bust=' + (new Date()).getTime()

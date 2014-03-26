@@ -8,6 +8,7 @@ define([
     /* Plugins */
     'bootstrap',
     'daterangepicker',
+    'bootstrapselect',
     'datepicker',
     'icheck',
     'shortcuts'
@@ -310,6 +311,8 @@ define([
             _this.registerDaterangepicker();
             _this.registerRepeatDialog();
             _this.registerCheckbox();
+
+            $(".selectpicker").selectpicker();
         },
 
         renderEditorTemplate: function (acalEvent) {
@@ -490,6 +493,7 @@ define([
         
         save: function () {
             var title = this.$("#event-title-input").val(),
+                type = this.$("#event-type-select").val(),
                 location = this.$("#event-location-input").val(),
                 description = this.$("#event-description-input").val();
 
@@ -508,6 +512,8 @@ define([
                 "end": this.acalEvent.get("end"),
                 "rrule": this.rrule,
                 "last_modified": new Date(),
+                "type": type,
+                "className": "fc-event-type-" + type.toLowerCase(),
                 "location": this.isBlank(location) ? null : location,
                 "description": this.isBlank(description) ? null : description
             });

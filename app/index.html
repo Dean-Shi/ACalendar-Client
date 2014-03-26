@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/bootstrap.css">
     <link rel="stylesheet" href="css/bootstrap-theme.css">
     <link rel="stylesheet" href="css/daterangepicker.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.4.1/bootstrap-select.min.css">
     <link rel="stylesheet" href="css/datepicker.css">
     <link rel="stylesheet" href="css/icheck-skins/all.css">
     <link rel="stylesheet" href="css/jquery.qtip.css">
@@ -148,6 +149,16 @@
           <hr>
           <div class="event-details">
             <form role="form">
+            <div class="form-group">
+                <label for="event-type-input">Event Type:</label>
+                <select id="event-type-select" class="selectpicker" title="event-type">
+                  <% var EVENT_TYPE = ["Meetings", "Appointments", "Tasks"];
+
+                     for (var i = 0, len = EVENT_TYPE.length; i < len; i++) { %>
+                  <option value="<%= EVENT_TYPE[i] %>" title="<%= EVENT_TYPE[i] %>" <%= EVENT_TYPE[i] === event.type ? "selected" : "" %>><%= EVENT_TYPE[i] %></option> 
+                  <% } %>
+                </select>
+              </div>
               <div class="form-group">
                 <label for="event-location-input">Location:</label>
                 <input type="text" class="form-control" id="event-location-input" placeholder="Location" value="<%= event.location %>">
@@ -313,6 +324,10 @@
               <td><%= event.summaryToString %></td>
             </tr>
             <% } %>
+            <tr>
+              <th>Event Type:</th>
+              <td><%= event.type %></td>
+            </tr>
             <% if (typeof event.location != "undefined" && event.location !== null) { %>
             <tr>
               <th>Location:</th>

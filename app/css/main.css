@@ -21,6 +21,7 @@ body>.container {
 #mini-calendar {
 	border: 1px solid #ddd;
 }
+
 /* Navbar
 ------------------------------------------------------------------------*/
 .navbar {
@@ -118,6 +119,7 @@ body>.container {
 .fc-agenda-allday .fc-widget-header {
 	background-color: #eee;
 }
+
 /* Calendar Timeline
 ------------------------------------------------------------------------*/
 .timeline {
@@ -131,6 +133,18 @@ body>.container {
     z-index: 1000;
     font-weight: bold;
     color: red;
+}
+
+/* Calendar Timeline
+------------------------------------------------------------------------*/
+.fc-event-type-meetings {
+	background-color: inherit;
+}
+.fc-event-type-appointments {
+	background-color: #c37;
+}
+.fc-event-type-tasks {
+	background-color: #0aa;
 }
 
 /* Event Editor
@@ -191,6 +205,9 @@ body>.container {
 }
 #editor-panel .event-time-select input {
 	cursor: pointer;
+}
+#editor-panel .event-details label {
+	display: block;
 }
 #editor-panel .event-details {
 	margin-top: 10px;
